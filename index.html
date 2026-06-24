@@ -290,7 +290,7 @@
       Exporter
     </button>
     <button class="btn btn-ghost btn-sm btn-danger admin-only" id="btnNew" title="Nouveau projet vide">Nouveau</button>
-    <button class="btn btn-sm visitor-only cloud-only" id="btnLogin" title="Connexion administrateur">Connexion admin</button>
+    <button class="btn btn-sm" id="btnLogin" onclick="openAuth()" title="Connexion administrateur">Connexion admin</button>
     <button class="btn btn-ghost btn-sm admin-only cloud-only" id="btnLogout" title="Se déconnecter">Déconnexion</button>
   </div>
   <input type="file" id="fileInput" accept="application/json" hidden>
@@ -392,7 +392,7 @@
    Remplace les deux valeurs ci-dessous par celles de TON projet Supabase
    (Project Settings → API : « Project URL » et « anon public » key).
    Tant qu'elles ne sont pas remplies, l'app fonctionne en MODE LOCAL. */
-const SUPABASE_URL = "mpdypgbxisbbtgmizvsu.supabase.co";
+const SUPABASE_URL = "https://mpdypgbxisbbtgmizvsu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZHlwZ2J4aXNiYnRnbWl6dnN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyODA1NjUsImV4cCI6MjA5Nzg1NjU2NX0.d163v5FzV6AxqyzDvsSJUSTVP0nbbGF3KTwZATabEx8";
 /* ================================================================= */
 
@@ -1013,7 +1013,10 @@ function startFilm(){
   const start = sceneById(state.project.startId) || state.project.scenes[0];
   if(!start || !start.videoId){
     const o = $("#overlay"); o.className = "overlay show";
-    o.innerHTML = `<div class="prompt">Rien à lire</div><div class="scene-title">Définis une scène de début avec une vidéo YouTube dans l'éditeur.</div>`;
+    o.innerHTML = `<div class="prompt">Aucun film chargé</div>
+      <div class="scene-title">Sélectionne un film dans le catalogue pour commencer la lecture.</div>
+      <div class="overlay-actions"><button class="btn btn-primary" id="ovBackToCatalog">Retour au catalogue</button></div>`;
+    const back = $("#ovBackToCatalog"); if(back) back.addEventListener("click", () => goView("catalog"));
     return;
   }
   if(!ytReady){ pendingStart = true; return; }   // YouTube API still loading
@@ -1219,7 +1222,13 @@ function applyBanner(){
   if(!cloudEnabled){
     b.style.display = "block";
     b.innerHTML = `<b>Mode local (non hébergé).</b> Tu travailles dans ton navigateur. Pour publier en ligne et activer les comptes admin, renseigne tes clés Supabase en haut du script (voir la procédure fournie). Tes films restent ici en attendant.`;
-  } else { b.style.display = "none"; }
+  } else if(!isAdmin){
+    b.style.display = "block";
+    b.innerHTML = `<b>Visiteur.</b> Tu peux regarder les films, mais pas éditer. <button class="btn btn-primary btn-sm" id="loginBannerBtn">Se connecter</button>`;
+    const btn = $("#loginBannerBtn"); if(btn) btn.addEventListener("click", openAuth);
+  } else {
+    b.style.display = "none";
+  }
 }
 
 /* ---------------- Catalog ---------------- */
@@ -1306,7 +1315,12 @@ $("#btnNewFilm").addEventListener("click", newFilm);
 $("#btnSave").addEventListener("click", saveFilm);
 
 /* ---------------- Auth ---------------- */
-function openAuth(){ $("#authErr").textContent = ""; $("#authModal").classList.add("show"); $("#authEmail").focus(); }
+function openAuth(){
+  const msg = cloudEnabled ? "" : "Supabase n'est pas configuré : renseigne SUPABASE_URL et SUPABASE_ANON_KEY en haut du script.";
+  $("#authErr").textContent = msg;
+  $("#authModal").classList.add("show");
+  $("#authEmail").focus();
+}
 function closeAuth(){ $("#authModal").classList.remove("show"); }
 $("#btnLogin").addEventListener("click", openAuth);
 $("#authCancel").addEventListener("click", closeAuth);
@@ -1314,7 +1328,7 @@ $("#authModal").addEventListener("click", e => { if(e.target.id === "authModal")
 $("#btnLogout").addEventListener("click", async () => { if(cloudEnabled) await sb.auth.signOut(); });
 $("#authForm").addEventListener("submit", async e => {
   e.preventDefault();
-  if(!cloudEnabled){ closeAuth(); return; }
+  if(!cloudEnabled){ $("#authErr").textContent = "Supabase n'est pas configuré. Vérifie SUPABASE_URL et SUPABASE_ANON_KEY."; return; }
   const email = $("#authEmail").value.trim(), password = $("#authPass").value;
   $("#authErr").textContent = "Connexion…";
   const { error } = await sb.auth.signInWithPassword({ email, password });
@@ -1327,12 +1341,13 @@ async function boot(){
   document.body.classList.toggle("cloud", !!cloudEnabled);
   applyBanner();
   if(!cloudEnabled){
-    load(); isAdmin = true; applyRole(); renderEditor(); loadCatalog(); goView("edit"); return;
+    load(); isAdmin = true; applyRole(); applyBanner(); renderEditor(); loadCatalog(); goView("edit"); return;
   }
   state.project = { title:"", startId:null, scenes:[] };
   try{ const { data } = await sb.auth.getSession(); isAdmin = !!(data && data.session); }catch(e){ isAdmin = false; }
   applyRole();
-  sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; applyRole(); loadCatalog(); });
+  applyBanner();
+  sb.auth.onAuthStateChange((_e, session) => { isAdmin = !!session; applyRole(); applyBanner(); loadCatalog(); });
   const fid = new URLSearchParams(location.search).get("film");
   if(fid){ const { data:f } = await sb.from("films").select("id,title,data").eq("id", fid).single(); if(f){ openFilmForPlay(f); return; } }
   goView("catalog");
