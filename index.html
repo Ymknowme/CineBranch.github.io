@@ -231,6 +231,38 @@
   .io-row .inp{flex:1;min-width:0}
   .up-btn{flex:none;padding:7px 11px}
 
+  /* ---------- Media library drawer ---------- */
+  .media-drawer{position:fixed;top:0;right:0;height:100vh;width:300px;max-width:85vw;z-index:50;background:var(--surface);border-left:1px solid var(--border);box-shadow:-12px 0 40px -16px rgba(0,0,0,.7);transform:translateX(102%);transition:transform .25s ease;display:flex;flex-direction:column}
+  .media-drawer.open{transform:translateX(0)}
+  .md-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border-soft);font-weight:600}
+  .md-head button{background:none;border:0;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;padding:0 4px}
+  .md-head button:hover{color:var(--text)}
+  .md-drop{display:block;margin:14px;padding:20px 14px;border:1.5px dashed var(--border);border-radius:12px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;transition:.15s}
+  .md-drop span{display:block;font-size:12px;opacity:.7;margin-top:3px}
+  .md-drop.over{border-color:var(--accent);background:rgba(225,29,72,.1);color:var(--text)}
+  .md-grid{flex:1;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 14px;align-content:start}
+  .md-item{aspect-ratio:1;border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:grab;background:#08081a}
+  .md-item:active{cursor:grabbing}
+  .md-item img{width:100%;height:100%;object-fit:cover;pointer-events:none;display:block}
+  .md-item:hover{border-color:var(--accent)}
+  .md-empty{grid-column:1/-1;color:var(--muted);font-size:12.5px;text-align:center;padding:24px 10px;line-height:1.6}
+  .md-hint{padding:10px 16px;border-top:1px solid var(--border-soft);color:var(--muted);font-size:12px;line-height:1.5}
+  .lc.drop-target{outline:3px solid var(--accent);outline-offset:2px}
+
+  /* ---------- Spectator progress map ---------- */
+  .map-wrap{width:min(960px,94vw);height:min(86vh,860px);background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+  .map-scroll{flex:1;overflow:auto;background:#06060f}
+  .map-node{position:absolute;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#0c0c1d;box-shadow:0 6px 18px -10px rgba(0,0,0,.8)}
+  .map-node img{width:100%;height:100%;object-fit:cover;display:block}
+  .map-node .map-noimg{width:100%;height:100%;background:linear-gradient(135deg,#1a1430,#0c0c1d)}
+  .map-node .map-title{position:absolute;left:0;right:0;bottom:0;padding:5px 8px;font-size:12px;font-weight:500;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .map-star{position:absolute;top:5px;right:7px;font-size:17px;color:#fbbf24;text-shadow:0 1px 4px rgba(0,0,0,.9);z-index:2;pointer-events:none}
+  .map-node.clickable{cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
+  .map-node.clickable:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 14px 30px -12px rgba(0,0,0,.85)}
+  .map-node.current{border-color:var(--accent);box-shadow:0 0 0 2px rgba(225,29,72,.5),0 6px 18px -10px rgba(0,0,0,.8)}
+  .map-node.locked{display:grid;place-items:center;background:repeating-linear-gradient(45deg,#0c0c1d,#0c0c1d 8px,#111133 8px,#111133 16px);border-style:dashed;color:#55557a}
+  .map-node.locked .map-q{font-family:'Righteous';font-size:26px}
+
   /* ---------- Auth modal & toast ---------- */
   .modal-back{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);padding:20px}
   .modal-back.show{display:flex}
@@ -287,6 +319,7 @@
   <div class="toolbar">
     <button class="btn btn-primary btn-sm admin-only cloud-only" id="btnSave" title="Sauvegarder le projet (brouillon, pour le reprendre plus tard)">Sauvegarder</button>
     <button class="btn btn-sm admin-only cloud-only" id="btnPublish" title="Publier : visible par tous au catalogue et en lecture">Publier</button>
+    <button class="btn btn-ghost btn-sm admin-only cloud-only" id="btnMedia" title="Ouvrir la médiathèque (images)">Médiathèque</button>
     <button class="btn btn-ghost btn-sm admin-only" id="btnDemo" title="Charger le projet de démonstration">Démo</button>
     <button class="btn btn-ghost btn-sm admin-only" id="btnImport" title="Importer un projet (.json)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
@@ -369,10 +402,32 @@
           Revoir
         </button>
         <button class="btn btn-sm" id="btnRestart" title="Recommencer depuis le début">Recommencer</button>
+        <button class="btn btn-sm" id="btnMap" title="Voir ma progression">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg>
+          Carte
+        </button>
       </div>
     </div>
   </section>
 </main>
+
+<aside class="media-drawer" id="mediaDrawer" aria-label="Médiathèque">
+  <div class="md-head"><span>Médiathèque</span><button id="mdClose" title="Fermer" aria-label="Fermer">×</button></div>
+  <label class="md-drop" id="mdDrop">
+    Glisse tes images ici
+    <span>ou clique pour en choisir</span>
+    <input type="file" id="mdFile" accept="image/*" multiple hidden>
+  </label>
+  <div class="md-grid" id="mdGrid"></div>
+  <div class="md-hint">Glisse une vignette sur un encart (dans l'aperçu d'une scène) pour l'utiliser comme image.</div>
+</aside>
+
+<div class="modal-back" id="mapModal">
+  <div class="map-wrap">
+    <div class="md-head"><span>Ta progression</span><button id="mapClose" title="Fermer" aria-label="Fermer">×</button></div>
+    <div class="map-scroll"><div class="tree-canvas" id="mapCanvas"></div></div>
+  </div>
+</div>
 
 <div class="modal-back" id="authModal">
   <form class="modal" id="authForm">
@@ -634,6 +689,14 @@ function sceneCard(s, i){
             <input class="inp sc-start" type="number" min="0" data-id="${s.id}" value="${s.start??""}" placeholder="0"></label>
           <label class="field"><span class="lab">Fin (s) — optionnel</span>
             <input class="inp sc-end" type="number" min="0" data-id="${s.id}" value="${s.end??""}" placeholder="fin de la vidéo"></label>
+          <label class="field"><span class="lab">Choix à (s) — sinon à la fin</span>
+            <input class="inp sc-choicetime" type="number" min="0" step="0.5" data-id="${s.id}" value="${s.choiceTime??""}" placeholder="fin"></label>
+        </div>
+        <div class="row-2">
+          <label class="field"><span class="lab">Miniature carte spectateur — URL ou ⬆</span>
+            <span class="io-row"><input class="inp sc-thumb" data-id="${s.id}" value="${escapeHtml(s.thumb||"")}" placeholder="https://… (sinon miniature YouTube)"><button type="button" class="btn btn-sm up-scene cloud-only" data-id="${s.id}" title="Téléverser une miniature">⬆</button></span></label>
+          <label class="field"><span class="lab">Révéler sur la carte si drapeau (option)</span>
+            <input class="inp sc-revealflag" data-id="${s.id}" value="${escapeHtml(s.revealFlag||"")}" placeholder="ex. clef"></label>
         </div>
       </div>
       <div>
@@ -660,7 +723,6 @@ function sceneCard(s, i){
         <div class="layout-stage" data-id="${s.id}" style="${s.videoId?`background-image:url(${thumbUrl(s.videoId,"hqdefault")})`:""}"></div>
       </div>
       <label class="opt-row"><input type="checkbox" class="sc-pause" data-id="${s.id}" ${(s.pauseOnChoices===false)?"":"checked"}> Mettre la vidéo en <b>pause</b> pendant les choix <span style="opacity:.7">(décoché = la vidéo continue en boucle dessous)</span></label>
-      <label class="opt-row">Afficher les choix à <input type="number" min="0" step="0.5" class="inp sc-choicetime" data-id="${s.id}" value="${s.choiceTime??""}" placeholder="fin" style="width:84px;flex:none"> s <span style="opacity:.7">(vide = à la fin de la scène)</span></label>
       `:""}
       <div class="choice-rows">${forms}</div>
       <button class="btn btn-sm sc-addchoice" data-id="${s.id}">
@@ -721,6 +783,21 @@ function wireLayout(id){
   const TH = 1.7;   // snap threshold (% of canvas)
   stage.querySelectorAll(".lc").forEach(lc => {
     const ci = +lc.dataset.ci, handle = lc.querySelector(".lc-handle");
+
+    // accept an image dropped from the media library (or a file dropped directly)
+    lc.addEventListener("dragover", e => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; lc.classList.add("drop-target"); });
+    lc.addEventListener("dragleave", () => lc.classList.remove("drop-target"));
+    lc.addEventListener("drop", async e => {
+      e.preventDefault(); lc.classList.remove("drop-target");
+      const url = e.dataTransfer.getData("text/cinebranch-image") || e.dataTransfer.getData("text/plain");
+      if(url){ s.choices[ci].image = url; save(); renderLayout(id); return; }
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if(f && f.type.startsWith("image/")){
+        if(!isAdmin && cloudEnabled){ openAuth(); return; }
+        try{ flash("Téléversement…"); const u = await uploadMedia(f); s.choices[ci].image = u; save(); renderLayout(id); flash("Image ajoutée ✓"); loadMediaList(); }
+        catch(err){ alert("Échec : " + (err.message||err)); }
+      }
+    });
 
     // move (with rule-of-thirds snapping)
     lc.addEventListener("pointerdown", e => {
@@ -793,6 +870,15 @@ function wireScene(id){
   if(pauseCb) pauseCb.addEventListener("change", e => { s.pauseOnChoices = e.target.checked; save(); });
   const ct = card.querySelector(".sc-choicetime");
   if(ct) ct.addEventListener("input", e => { s.choiceTime = e.target.value === "" ? null : Math.max(0, +e.target.value); save(); });
+  const thumbInp = card.querySelector(".sc-thumb");
+  if(thumbInp) thumbInp.addEventListener("input", e => { s.thumb = e.target.value; save(); });
+  const rf = card.querySelector(".sc-revealflag");
+  if(rf) rf.addEventListener("input", e => { s.revealFlag = e.target.value; save(); });
+  const upScene = card.querySelector(".up-scene");
+  if(upScene) upScene.addEventListener("click", () => {
+    if(!isAdmin && cloudEnabled){ openAuth(); return; }
+    pickAndUpload("image/*", url => { s.thumb = url; save(); const i = card.querySelector(".sc-thumb"); if(i) i.value = url; });
+  });
   const gt = card.querySelector(".grid-toggle");
   if(gt) gt.addEventListener("click", () => {
     gridOn = !gridOn;
@@ -1008,6 +1094,7 @@ let player = null, ytReady = false, pendingStart = false;
 let playerReady = false, readyQueue = [];
 let currentId = null, history = [], pollTimer = null, sceneDone = false;
 let flags = new Set();
+let visited = new Set();   // scenes the spectator has reached (for the progress map)
 let audibleTimer = null, loadWatchdog = null, loopTimer = null, inChoiceLoop = false;
 const choiceAudio = new Audio(); choiceAudio.preload = "auto";   // hover sound
 const clickAudio  = new Audio(); clickAudio.preload  = "auto";   // click sound
@@ -1073,7 +1160,7 @@ function showLoadError(){
 function beginPlayback(){
   ensurePlayer();
   whenReady(() => {
-    flags = new Set(); history = []; currentId = null;
+    flags = new Set(); visited = new Set(); history = []; currentId = null;
     const start = sceneById(state.project.startId) || state.project.scenes[0];
     goToScene(start.id, false);
   });
@@ -1082,6 +1169,7 @@ function goToScene(id, push=true){
   const s = sceneById(id); if(!s) return;
   if(push && currentId) history.push(currentId);
   currentId = id; sceneDone = false; inChoiceLoop = false;
+  visited.add(id);
   clearTimeout(loadWatchdog); clearInterval(loopTimer);
   hideOverlay(); renderCrumbs();
   player.loadVideoById(vidOpts(s));
@@ -1226,6 +1314,63 @@ function stopPlayback(){ clearInterval(pollTimer); clearInterval(loopTimer); cle
 
 $("#btnReplayScene").addEventListener("click", () => { if(currentId) whenReady(() => goToScene(currentId, false)); });
 $("#btnRestart").addEventListener("click", beginPlayback);
+
+/* ---------------- Spectator progress map (fog of war) ---------------- */
+function spectatorRevealed(id){
+  const sc = sceneById(id); if(!sc) return false;
+  return visited.has(id) || (sc.revealFlag && sc.revealFlag.trim() && flags.has(sc.revealFlag.trim()));
+}
+function openSpectatorMap(){
+  const host = $("#mapCanvas"), scenes = state.project.scenes;
+  if(!scenes.length){ host.innerHTML = `<div class="md-empty">Rien à afficher.</div>`; $("#mapModal").classList.add("show"); return; }
+  const startId = state.project.startId || scenes[0].id;
+  const level = { [startId]:0 }, q = [startId];
+  while(q.length){ const id = q.shift(), s = sceneById(id); if(!s) continue;
+    (s.choices||[]).forEach(c => { const t = resolveTarget(c.target); if(t && sceneById(t) && level[t] === undefined){ level[t] = level[id]+1; q.push(t); } }); }
+  let maxL = 0; Object.values(level).forEach(v => { if(v > maxL) maxL = v; });
+  const orphanL = maxL+1; let ho = false; scenes.forEach(s => { if(level[s.id] === undefined){ level[s.id] = orphanL; ho = true; } }); if(ho) maxL = orphanL;
+  const NODEW = 150, NODEH = 92, COLW = 180, LVLH = 150, PADX = 30, PADY = 30;
+  const byLevel = {}; scenes.forEach(s => { (byLevel[level[s.id]] = byLevel[level[s.id]] || []).push(s.id); });
+  let maxCols = 1; Object.keys(byLevel).forEach(k => { if(byLevel[k].length > maxCols) maxCols = byLevel[k].length; });
+  const W = PADX*2 + (maxCols-1)*COLW + NODEW, H = PADY*2 + maxL*LVLH + NODEH;
+  const pos = {}; Object.keys(byLevel).forEach(k => { const L = +k, ids = byLevel[k], rowW = (ids.length-1)*COLW + NODEW, sx = (W-rowW)/2; ids.forEach((id, col) => pos[id] = { x: sx + col*COLW, y: PADY + L*LVLH }); });
+  const shown = new Set();
+  scenes.forEach(s => { if(spectatorRevealed(s.id)){ shown.add(s.id); (s.choices||[]).forEach(c => { const t = resolveTarget(c.target); if(t) shown.add(t); }); } });
+  if(!shown.size) shown.add(startId);
+  let paths = "";
+  scenes.forEach(s => { if(!spectatorRevealed(s.id)) return; const p = pos[s.id]; if(!p) return;
+    (s.choices||[]).forEach(c => { const t = resolveTarget(c.target), tp = pos[t]; if(!tp || !shown.has(t)) return;
+      const sx = p.x+NODEW/2, sy = p.y+NODEH, tx = tp.x+NODEW/2, ty = tp.y, dy = Math.max(30, (ty-sy)/2), back = level[t] <= level[s.id];
+      const d = back ? `M ${sx} ${sy} C ${sx+70} ${sy+30}, ${tx+70} ${ty-30}, ${tx} ${ty}` : `M ${sx} ${sy} C ${sx} ${sy+dy}, ${tx} ${ty-dy}, ${tx} ${ty}`;
+      paths += `<path class="edge${back?" back":""}" d="${d}" marker-end="url(#${back?"arrowBack":"arrow"})"/>`;
+    });
+  });
+  const svg = `<svg class="tree-edges" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#E11D48"/></marker>
+    <marker id="arrowBack" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#fbbf24"/></marker></defs>${paths}</svg>`;
+  let nodes = "";
+  scenes.forEach(s => { if(!shown.has(s.id)) return; const p = pos[s.id]; if(!p) return;
+    const st = `left:${p.x}px;top:${p.y}px;width:${NODEW}px;height:${NODEH}px`;
+    if(spectatorRevealed(s.id)){
+      const img = s.thumb ? escapeHtml(s.thumb.trim()) : (s.videoId ? thumbUrl(s.videoId) : "");
+      const isEnd = !(s.choices||[]).some(c => { const t = resolveTarget(c.target); return t && sceneById(t); });
+      const star = (isEnd && visited.has(s.id)) ? `<span class="map-star" title="Fin atteinte">★</span>` : "";
+      nodes += `<div class="map-node clickable ${s.id===currentId?"current":""}" data-go="${s.id}" title="Rejouer : ${escapeHtml(s.title||"")}" style="${st}">${img?`<img src="${img}" alt="">`:`<div class="map-noimg"></div>`}${star}<span class="map-title">${escapeHtml(s.title||"")}</span></div>`;
+    } else {
+      nodes += `<div class="map-node locked" style="${st}"><span class="map-q">?</span></div>`;
+    }
+  });
+  host.style.width = W+"px"; host.style.height = H+"px"; host.innerHTML = svg + nodes;
+  host.querySelectorAll(".map-node[data-go]").forEach(n => n.addEventListener("click", () => {
+    const id = n.dataset.go;
+    $("#mapModal").classList.remove("show");
+    whenReady(() => goToScene(id, false));
+  }));
+  $("#mapModal").classList.add("show");
+}
+$("#btnMap").addEventListener("click", openSpectatorMap);
+$("#mapClose").addEventListener("click", () => $("#mapModal").classList.remove("show"));
+$("#mapModal").addEventListener("click", e => { if(e.target.id === "mapModal") $("#mapModal").classList.remove("show"); });
 $("#unmuteBtn").addEventListener("click", () => {
   try{ player.unMute(); player.setVolume(100); player.playVideo(); }catch(e){}
   $("#unmuteBtn").classList.remove("show");
@@ -1356,7 +1501,7 @@ async function togglePublish(){
 /* upload images & sounds to Supabase Storage (bucket "media") */
 async function uploadMedia(file){
   const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const path = (currentFilmId || "drafts") + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 7) + "." + ext;
+  const path = Date.now() + "-" + Math.random().toString(36).slice(2, 7) + "." + ext;
   const { error } = await sb.storage.from("media").upload(path, file, { contentType: file.type, upsert: false });
   if(error) throw error;
   return sb.storage.from("media").getPublicUrl(path).data.publicUrl;
@@ -1375,6 +1520,49 @@ function pickAndUpload(accept, cb){
 $("#btnNewFilm").addEventListener("click", newFilm);
 $("#btnSave").addEventListener("click", saveProject);
 $("#btnPublish").addEventListener("click", togglePublish);
+
+/* ---------------- Media library (drawer) ---------------- */
+function toggleMedia(force){
+  const d = $("#mediaDrawer");
+  const open = (force === undefined) ? !d.classList.contains("open") : force;
+  d.classList.toggle("open", open);
+  if(open) loadMediaList();
+}
+async function loadMediaList(){
+  const grid = $("#mdGrid");
+  if(!cloudEnabled){ grid.innerHTML = '<div class="md-empty">Médiathèque disponible une fois Supabase configuré.</div>'; return; }
+  grid.innerHTML = '<div class="md-empty">Chargement…</div>';
+  const { data, error } = await sb.storage.from("media").list("", { limit:200, sortBy:{ column:"created_at", order:"desc" } });
+  if(error){ grid.innerHTML = '<div class="md-empty">Erreur : ' + escapeHtml(error.message) + '</div>'; return; }
+  const imgs = (data||[]).filter(o => o.name && /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(o.name));
+  if(!imgs.length){ grid.innerHTML = '<div class="md-empty">Aucune image. Glisse-en dans la zone ci-dessus pour commencer.</div>'; return; }
+  grid.innerHTML = imgs.map(o => {
+    const url = sb.storage.from("media").getPublicUrl(o.name).data.publicUrl;
+    return '<div class="md-item" draggable="true" data-url="' + escapeHtml(url) + '" title="Glisse-moi sur un encart"><img src="' + escapeHtml(url) + '" alt=""></div>';
+  }).join("");
+  grid.querySelectorAll(".md-item").forEach(it => it.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("text/cinebranch-image", it.dataset.url);
+    e.dataTransfer.setData("text/plain", it.dataset.url);
+    e.dataTransfer.effectAllowed = "copy";
+  }));
+}
+async function uploadFiles(files){
+  if(!cloudEnabled){ alert("Le téléversement nécessite l'hébergement Supabase."); return; }
+  if(!isAdmin){ openAuth(); return; }
+  let n = 0;
+  for(const f of files){ if(!f.type.startsWith("image/")) continue; flash("Téléversement…"); try{ await uploadMedia(f); n++; }catch(e){ alert("Échec : " + (e.message||e)); } }
+  if(n) flash(n + " image(s) ajoutée(s) ✓");
+  loadMediaList();
+}
+$("#btnMedia").addEventListener("click", () => toggleMedia());
+$("#mdClose").addEventListener("click", () => toggleMedia(false));
+$("#mdFile").addEventListener("change", e => uploadFiles(e.target.files));
+(function(){
+  const drop = $("#mdDrop");
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); uploadFiles(e.dataTransfer.files); });
+})();
 
 /* ---------------- Auth ---------------- */
 function openAuth(){
